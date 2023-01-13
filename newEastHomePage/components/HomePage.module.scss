@@ -1,0 +1,47 @@
+@import "~@fluentui/react/dist/sass/References.scss";
+.body {
+  background-color: #f4f4f4;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  cursor: pointer;
+}
+::-webkit-scrollbar:horizontal {
+  height: 5px;
+  cursor: pointer;
+}
+::-webkit-scrollbar-thumb {
+  cursor: pointer;
+  background: #f4f4f4;
+  border-radius: 10px;
+}
+
+.scroll {
+  border-radius: 1px;
+}
+
+.description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.headingTwo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.headingOne {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.surveyDescription {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
