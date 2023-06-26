@@ -4,7 +4,7 @@ import * as React from "react";
 import { SPComponentLoader } from "@microsoft/sp-loader";
 //import { MSGraphClientV3 } from "@microsoft/sp-http";
 import { SPHttpClient, SPHttpClientResponse } from "@microsoft/sp-http";
-
+import "./polices/index.css";
 import { ITemplateDocumentProps } from "./ITemplateDocumentProps";
 import { Row, Col, Empty } from "antd";
 import "antd/dist/reset.css";
@@ -16,6 +16,9 @@ interface ITemplateDocumentState {
   filterZa: any;
   filterModified: any;
   searchText: any;
+  isScreenWidth: any;
+  folderFilter: any;
+  fileFilter: any;
 }
 
 export default class TemplateDocument extends React.Component<
@@ -34,15 +37,21 @@ export default class TemplateDocument extends React.Component<
       filterZa: false,
       filterModified: false,
       searchText: "",
+      isScreenWidth: 800,
+      fileFilter: null,
+      folderFilter: null,
     };
   }
   public componentDidMount() {
+    let ScreenWidth: any = window.screen.width;
+    console.log(ScreenWidth, "ScreenWidth");
+    this.setState({ isScreenWidth: ScreenWidth });
     const { context } = this.props;
 
     context.spHttpClient
 
       .get(
-        `${context.pageContext.web.absoluteUrl}/_api/web/lists/getByTitle('Documents')/items?$select=ID,FileRef,Created,Modified/FileRef,Editor/Title&$expand=Editor`,
+        `${context.pageContext.web.absoluteUrl}/_api/web/lists/getByTitle('Documents')/items?$select=ID,FileRef,ApprovalStatus,Created,Modified/FileRef,Editor/Title&$expand=Editor`,
 
         SPHttpClient.configurations.v1
       )
@@ -67,11 +76,27 @@ export default class TemplateDocument extends React.Component<
         });
 
         console.log(this.state.PublicationsListItems, "Policies");
+        const folderFilter: any = listItems.value.filter(
+          (item: any) => item.FileRef.split(".").length === 1
+        );
+        this.setState({ folderFilter: folderFilter });
+        const approvedItems: any = listItems.value; /* .filter(
+          (items: any) => items.ApprovalStatus === "Approved"
+        ); */
+        console.log(approvedItems, "Policies approvedItems");
+        const filesFilter: any = approvedItems.filter(
+          (items: any) => items.FileRef.split(".").length > 1
+        );
+        this.setState({
+          fileFilter: filesFilter,
+        });
+        console.log(folderFilter, "folderFilter");
+        console.log(filesFilter, "fileFilter");
       });
   }
 
   public sortAZ: any = () => {
-    let BasicState: any = this.state.PublicationsListItems;
+    let BasicState: any = this.state.folderFilter;
     console.log("BasicState", BasicState);
     let sortAZData: any = BasicState.sort((a: any, b: any) => {
       if (a.FileRef > b.FileRef) {
@@ -84,15 +109,30 @@ export default class TemplateDocument extends React.Component<
     });
     console.log(sortAZData, "Sortingssss");
     this.setState({
-      PublicationsListItems: sortAZData,
+      folderFilter: sortAZData,
       filterRecent: false,
       filterAz: true,
       filterModified: false,
       filterZa: false,
     });
+    let fileState: any = this.state.fileFilter;
+    console.log("BasicState", BasicState);
+    let fileAZData: any = fileState.sort((a: any, b: any) => {
+      if (a.FileRef > b.FileRef) {
+        return 1;
+      }
+      if (a.FileRef < b.FileRef) {
+        return -1;
+      }
+      return 0;
+    });
+    console.log(fileAZData, "fileSortingssss");
+    this.setState({
+      fileFilter: fileAZData,
+    });
   };
   public sortRecent: any = () => {
-    let BasicState: any = this.state.PublicationsListItems;
+    let BasicState: any = this.state.folderFilter;
     console.log("BasicState", BasicState);
     let sortRecentData: any = BasicState.sort(
       (a: any, b: any) =>
@@ -100,15 +140,25 @@ export default class TemplateDocument extends React.Component<
     );
     console.log(sortRecentData, "Sortingssss");
     this.setState({
-      PublicationsListItems: sortRecentData,
+      folderFilter: sortRecentData,
       filterRecent: true,
       filterAz: false,
       filterModified: false,
       filterZa: false,
     });
+    let fileState: any = this.state.fileFilter;
+    console.log("BasicState", BasicState);
+    let fileAZData: any = fileState.sort(
+      (a: any, b: any) =>
+        new Date(b.Created).getTime() - new Date(a.Created).getTime()
+    );
+    console.log(fileAZData, "fileSortingssss");
+    this.setState({
+      fileFilter: fileAZData,
+    });
   };
   public sortModified: any = () => {
-    let BasicState: any = this.state.PublicationsListItems;
+    let BasicState: any = this.state.folderFilter;
     console.log("BasicState", BasicState);
     let sortModifiedData: any = BasicState.sort(
       (a: any, b: any) =>
@@ -116,15 +166,25 @@ export default class TemplateDocument extends React.Component<
     );
     console.log(sortModifiedData, "Sortingssss");
     this.setState({
-      PublicationsListItems: sortModifiedData,
+      folderFilter: sortModifiedData,
       filterRecent: false,
       filterAz: false,
       filterModified: true,
       filterZa: false,
     });
+    let fileState: any = this.state.fileFilter;
+    console.log("BasicState", BasicState);
+    let fileAZData: any = fileState.sort(
+      (a: any, b: any) =>
+        new Date(b.Modified).getTime() - new Date(a.Modified).getTime()
+    );
+    console.log(fileAZData, "fileSortingssss");
+    this.setState({
+      fileFilter: fileAZData,
+    });
   };
   public sortZA: any = () => {
-    let BasicState: any = this.state.PublicationsListItems;
+    let BasicState: any = this.state.folderFilter;
     console.log("BasicState", BasicState);
     let sortZAData: any = BasicState.sort((a: any, b: any) => {
       if (b.FileRef > a.FileRef) {
@@ -137,11 +197,26 @@ export default class TemplateDocument extends React.Component<
     });
     console.log(sortZAData, "Sortingssss");
     this.setState({
-      PublicationsListItems: sortZAData,
+      folderFilter: sortZAData,
       filterRecent: false,
       filterAz: false,
       filterModified: false,
       filterZa: true,
+    });
+    let fileState: any = this.state.fileFilter;
+    console.log("BasicState", BasicState);
+    let fileAZData: any = fileState.sort((a: any, b: any) => {
+      if (b.FileRef > a.FileRef) {
+        return 1;
+      }
+      if (b.FileRef < a.FileRef) {
+        return -1;
+      }
+      return 0;
+    });
+    console.log(fileAZData, "fileSortingssss");
+    this.setState({
+      fileFilter: fileAZData,
     });
   };
   public render(): React.ReactElement<{}> {
@@ -152,6 +227,9 @@ export default class TemplateDocument extends React.Component<
       filterZa,
       filterModified,
       searchText,
+      isScreenWidth,
+
+      fileFilter,
     } = this.state;
 
     const { context } = this.props;
@@ -167,7 +245,10 @@ export default class TemplateDocument extends React.Component<
 
     SPComponentLoader.loadCss(bootstarp5CSS);
     return (
-      <div className="container px-0" style={{ paddingTop: "100px" }}>
+      <div
+        className="container px-0"
+        style={{ paddingTop: `${isScreenWidth < 768 ? "30px" : "80px"}` }}
+      >
         <Row>
           <Col xs={24} sm={24} md={24} lg={24}>
             <div
@@ -187,7 +268,7 @@ export default class TemplateDocument extends React.Component<
                     height="20px"
                     width="50px"
                   />
-                  Document
+                  Shared Documents
                 </h4>
                 <div className="d-flex align-items-center justify-content-end px-3 w-50">
                   <div className="input-group flex-nowrap pe-3">
@@ -306,127 +387,313 @@ export default class TemplateDocument extends React.Component<
           </Col>
           <Col xs={0} sm={0} md={24} lg={18}>
             <div
-              className="w-100 my-3"
+              className="w-100 my-3 d-flex flex-column justify-content-between"
               style={{
                 height: "560px",
                 boxShadow: "1px 1px 18px 0 rgba(0, 0, 0, 0.16)",
                 backgroundColor: " #fff",
                 borderRadius: "5px",
                 overflowY: "scroll",
+                scrollbarWidth: "thin",
               }}
             >
               {PublicationsListItems?.length > 0 ? (
-                PublicationsListItems?.filter((item: any) => {
-                  return (
-                    item?.FileRef.split("/")
-                      [item.FileRef.split("/").length - 1]?.toLowerCase()
-                      .match(searchText.toLowerCase()) ||
-                    item?.Created?.toLowerCase().match(
-                      searchText.toLowerCase()
-                    ) ||
-                    item?.FileRef.split("/")[5]
-                      ?.toLowerCase()
-                      .match(searchText.toLowerCase())
-                  );
-                })?.map((driveData: any, index: any) => {
-                  let fileIcon: any;
+                <>
+                  {/* {folderFilter?.length > 0 &&
+                    folderFilter
+                      ?.filter((item: any) => {
+                        return (
+                          item?.FileRef.split("/")
+                            [item.FileRef.split("/").length - 1]?.toLowerCase()
+                            .match(searchText.toLowerCase()) ||
+                          item?.Created?.toLowerCase().match(
+                            searchText.toLowerCase()
+                          ) ||
+                          item?.FileRef.split("/")[5]
+                            ?.toLowerCase()
+                            .match(searchText.toLowerCase())
+                        );
+                      })
+                      ?.map((driveData: any, index: any) => {
+                        let fileIcon: any;
 
-                  switch (
-                    driveData.FileRef.split(".")[
-                      driveData.FileRef.split(".").length - 1
-                    ]
-                  ) {
-                    case "docx" || "doc":
-                      fileIcon = require("../assets/word.png");
+                        switch (
+                          driveData.FileRef.split(".")[
+                            driveData.FileRef.split(".").length - 1
+                          ]
+                        ) {
+                          case "docx" || "doc":
+                            fileIcon = require("../assets/word.png");
 
-                      break;
+                            break;
 
-                    case "xlsx":
-                      fileIcon = require("../assets/excel.png");
+                          case "xlsx":
+                            fileIcon = require("../assets/excel.png");
 
-                      break;
+                            break;
 
-                    case "pptx" || "ppt":
-                      fileIcon = require("../assets/ppt.png");
+                          case "pptx" || "ppt":
+                            fileIcon = require("../assets/ppt.png");
 
-                      break;
+                            break;
 
-                    case "png":
-                      fileIcon = require("../assets/png.png");
+                          case "png":
+                            fileIcon = require("../assets/png.png");
 
-                      break;
+                            break;
 
-                    case "jpg" || "jpeg":
-                      fileIcon = require("../assets/jpeg.png");
+                          case "jpg" || "jpeg":
+                            fileIcon = require("../assets/jpeg.png");
 
-                      break;
+                            break;
 
-                    case "pdf":
-                      fileIcon = require("../assets/pdf.png");
+                          case "pdf":
+                            fileIcon = require("../assets/pdf.png");
 
-                      break;
+                            break;
 
-                    default:
-                      fileIcon = require("../assets/folder.png");
+                          default:
+                            fileIcon = require("../assets/folder.png");
 
-                      break;
-                  }
+                            break;
+                        }
 
-                  console.log(
-                    driveData.FileRef.split("/")[
-                      driveData.FileRef.split("/").length - 1
-                    ],
+                        console.log(
+                          driveData.FileRef.split("/")[
+                            driveData.FileRef.split("/").length - 1
+                          ],
 
-                    driveData.FileRef.split(context.pageContext.web.title)[
-                      driveData.FileRef.split(context.pageContext.web.title)
-                        .length - 1
-                    ],
+                          driveData.FileRef.split(
+                            context.pageContext.web.title
+                          )[
+                            driveData.FileRef.split(
+                              context.pageContext.web.title
+                            ).length - 1
+                          ],
 
-                    "Data Policies"
-                  );
+                          "Data Policies"
+                        );
 
-                  let absoluteUrl = context.pageContext.web.absoluteUrl;
+                        let absoluteUrl: any =
+                          context.pageContext.web.absoluteUrl;
 
-                  let subtUrl = driveData.FileRef.split(
-                    context.pageContext.web.title
-                  )[
-                    driveData.FileRef.split(context.pageContext.web.title)
-                      .length - 1
-                  ];
+                        let subtUrl: any = driveData.FileRef.split(
+                          context.pageContext.web.title
+                        )[
+                          driveData.FileRef.split(context.pageContext.web.title)
+                            .length - 1
+                        ];
+                        let documentUrl: any;
+                        switch (absoluteUrl.split("/").length) {
+                          case 6:
+                            documentUrl = `${absoluteUrl}/`.concat(
+                              subtUrl.split("/").splice(4).join("/")
+                            );
+                            break;
 
-                  let documentUrl = absoluteUrl.concat(subtUrl);
+                          default:
+                            documentUrl = absoluteUrl.concat(subtUrl);
+                        }
+                        return (
+                          <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-interception="off"
+                            href={documentUrl}
+                            className="text-decoration-none text-dark"
+                          >
+                            <div
+                              className="d-flex mb-3 mt-3 mx-3"
+                              style={{ fontSize: "16px", fontWeight: "400" }}
+                            >
+                              <div>
+                                <img
+                                  src={fileIcon}
+                                  width="30px"
+                                  height="30px"
+                                />
+                              </div>
 
-                  console.log(documentUrl);
+                              <div
+                                className="d-flex align-items-center ms-3"
+                                style={{ fontSize: "18px", fontWeight: "500" }}
+                              >
+                                {
+                                  driveData.FileRef.split("/")[
+                                    driveData.FileRef.split("/").length - 1
+                                  ]
+                                }
+                              </div>
+                            </div>
 
-                  return (
-                    <a
-                      href={documentUrl}
-                      className="text-decoration-none text-dark"
-                    >
-                      <div
-                        className="d-flex mb-3 mt-3 mx-3"
-                        style={{ fontSize: "16px", fontWeight: "400" }}
-                      >
-                        <div>
-                          <img src={fileIcon} width="30px" height="30px" />
-                        </div>
+                            <hr />
+                          </a>
+                        );
+                      })} */}
+                      <div>
+                  {fileFilter?.length > 0 &&
+                    fileFilter
+                      ?.filter((item: any) => {
+                        return (
+                          item?.FileRef.split("/")
+                            [item.FileRef.split("/").length - 1]?.toLowerCase()
+                            .match(searchText.toLowerCase()) ||
+                          item?.Created?.toLowerCase().match(
+                            searchText.toLowerCase()
+                          ) ||
+                          item?.FileRef.split("/")[5]
+                            ?.toLowerCase()
+                            .match(searchText.toLowerCase())
+                        );
+                      })
+                      ?.map((driveData: any, index: any) => {
+                        let fileIcon: any;
 
-                        <div
-                          className="d-flex align-items-center ms-3"
-                          style={{ fontSize: "18px", fontWeight: "500" }}
-                        >
-                          {
-                            driveData.FileRef.split("/")[
-                              driveData.FileRef.split("/").length - 1
-                            ]
-                          }
-                        </div>
+                        switch (
+                          driveData.FileRef.split(".")[
+                            driveData.FileRef.split(".").length - 1
+                          ]
+                        ) {
+                          case "docx" || "doc":
+                            fileIcon = require("../assets/word.png");
+
+                            break;
+
+                          case "xlsx":
+                            fileIcon = require("../assets/excel.png");
+
+                            break;
+
+                          case "pptx" || "ppt":
+                            fileIcon = require("../assets/ppt.png");
+
+                            break;
+
+                          case "png":
+                            fileIcon = require("../assets/png.png");
+
+                            break;
+                          case "PNG":
+                            fileIcon = require("../assets/png.png");
+
+                            break;
+
+                          case "jpg" || "jpeg":
+                            fileIcon = require("../assets/jpeg.png");
+
+                            break;
+
+                          case "pdf":
+                            fileIcon = require("../assets/pdf.png");
+
+                            break;
+
+                          default:
+                            fileIcon = require("../assets/word.png");
+
+                            break;
+                        }
+
+                        console.log(
+                          driveData.FileRef.split("/")[
+                            driveData.FileRef.split("/").length - 1
+                          ],
+
+                          driveData.FileRef.split(
+                            context.pageContext.web.title
+                          )[
+                            driveData.FileRef.split(
+                              context.pageContext.web.title
+                            ).length - 1
+                          ],
+
+                          "Data Policies"
+                        );
+                        console.log(driveData.FileRef, "driveData.FileRef");
+                        let absoluteUrl: any =
+                          context.pageContext.web.absoluteUrl;
+                        console.log(absoluteUrl, "absoluteUrl");
+                        let subtUrl: any = driveData.FileRef.split(
+                          context.pageContext.web.title
+                        )[
+                          driveData.FileRef.split(context.pageContext.web.title)
+                            .length - 1
+                        ];
+                        console.log(subtUrl, "subtUrl");
+                        let documentUrl: any;
+                        switch (absoluteUrl.split("/").length) {
+                          case absoluteUrl.split("/")[
+                            absoluteUrl.split("/").length - 1
+                          ] !== "QHSE" && 6:
+                            documentUrl = `${absoluteUrl}/`.concat(
+                              subtUrl.split("/").splice(4).join("/")
+                            );
+                            break;
+
+                          default:
+                            documentUrl = absoluteUrl.concat(subtUrl);
+                        }
+                        console.log(documentUrl, "documentUrl");
+                        return (
+                          <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-interception="off"
+                            href={documentUrl}
+                            className="text-decoration-none text-dark"
+                          >
+                            <div
+                              className="d-flex mb-3 mt-3 mx-3"
+                              style={{ fontSize: "16px", fontWeight: "400" }}
+                            >
+                              <div>
+                                <img
+                                  src={fileIcon}
+                                  width="30px"
+                                  height="30px"
+                                />
+                              </div>
+
+                              <div
+                                className="d-flex align-items-center ms-3"
+                                style={{ fontSize: "18px", fontWeight: "500" }}
+                              >
+                                {
+                                  driveData.FileRef.split("/")[
+                                    driveData.FileRef.split("/").length - 1
+                                  ]
+                                }
+                              </div>
+                            </div>
+
+                            <hr />
+                          </a>
+                        );
+                      })}
                       </div>
-
-                      <hr />
+                  <div
+                    className="d-flex justify-content-center mb-3"
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <a
+                      className="text-decoration-none text-dark"
+                      href={`${
+                        context.pageContext.web.absoluteUrl.split("/")
+                          .length === 5
+                          ? `${context.pageContext.web.absoluteUrl}/Shared Documents/Forms/AllItems.aspx`
+                          : `${context.pageContext.web.absoluteUrl}/Documents/Forms/AllItems.aspx`
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View All
                     </a>
-                  );
-                })
+                  </div>
+                </>
               ) : (
                 <Row className="w-100">
                   <Col xs={24} sm={24} md={24} lg={24} xl={24}>
@@ -445,7 +712,7 @@ export default class TemplateDocument extends React.Component<
           </Col>
           <Col xs={24} sm={24} md={0} lg={0}>
             <div
-              className="w-100 my-3"
+              className="w-100 my-3 d-flex flex-column justify-content-between"
               style={{
                 height: "560px",
                 boxShadow: "1px 1px 18px 0 rgba(0, 0, 0, 0.16)",
@@ -455,117 +722,353 @@ export default class TemplateDocument extends React.Component<
               }}
             >
               {PublicationsListItems?.length > 0 ? (
-                PublicationsListItems?.filter((item: any) => {
-                  return (
-                    item?.FileRef.split("/")[4]
-                      ?.toLowerCase()
-                      .match(searchText.toLowerCase()) ||
-                    item?.Created?.toLowerCase().match(
-                      searchText.toLowerCase()
-                    ) ||
-                    item?.FileRef.split("/")[5]
-                      ?.toLowerCase()
-                      .match(searchText.toLowerCase())
-                  );
-                })?.map((driveData: any, index: any) => {
-                  let fileIcon: any;
+                <>
+                  {/*  */}
+                  {/* {folderFilter?.length > 0 &&
+                    folderFilter
+                      ?.filter((item: any) => {
+                        return (
+                          item?.FileRef.split("/")[4]
+                            ?.toLowerCase()
+                            .match(searchText.toLowerCase()) ||
+                          item?.Created?.toLowerCase().match(
+                            searchText.toLowerCase()
+                          ) ||
+                          item?.FileRef.split("/")[5]
+                            ?.toLowerCase()
+                            .match(searchText.toLowerCase())
+                        );
+                      })
+                      ?.map((driveData: any, index: any) => {
+                        let fileIcon: any;
 
-                  switch (
-                    driveData.FileRef.split(".")[
-                      driveData.FileRef.split(".").length - 1
-                    ]
-                  ) {
-                    case "docx" || "doc":
-                      fileIcon = require("../assets/word.png");
+                        switch (
+                          driveData.FileRef.split(".")[
+                            driveData.FileRef.split(".").length - 1
+                          ]
+                        ) {
+                          case "docx" || "doc":
+                            fileIcon = require("../assets/word.png");
 
-                      break;
+                            break;
 
-                    case "xlsx":
-                      fileIcon = require("../assets/excel.png");
+                          case "xlsx":
+                            fileIcon = require("../assets/excel.png");
 
-                      break;
+                            break;
 
-                    case "pptx" || "ppt":
-                      fileIcon = require("../assets/ppt.png");
+                          case "pptx" || "ppt":
+                            fileIcon = require("../assets/ppt.png");
 
-                      break;
+                            break;
 
-                    case "png":
-                      fileIcon = require("../assets/png.png");
+                          case "png":
+                            fileIcon = require("../assets/png.png");
 
-                      break;
+                            break;
+                          case "PNG":
+                            fileIcon = require("../assets/png.png");
 
-                    case "jpg" || "jpeg":
-                      fileIcon = require("../assets/jpeg.png");
+                            break;
 
-                      break;
+                          case "jpg" || "jpeg":
+                            fileIcon = require("../assets/jpeg.png");
 
-                    case "pdf":
-                      fileIcon = require("../assets/pdf.png");
+                            break;
 
-                      break;
+                          case "pdf":
+                            fileIcon = require("../assets/pdf.png");
 
-                    default:
-                      fileIcon = require("../assets/folder.png");
+                            break;
 
-                      break;
-                  }
+                          default:
+                            fileIcon = require("../assets/folder.png");
 
-                  console.log(
-                    driveData.FileRef.split("/")[
-                      driveData.FileRef.split("/").length - 1
-                    ],
+                            break;
+                        }
 
-                    driveData.FileRef.split(context.pageContext.web.title)[
-                      driveData.FileRef.split(context.pageContext.web.title)
-                        .length - 1
-                    ],
+                        console.log(
+                          driveData.FileRef.split("/")[
+                            driveData.FileRef.split("/").length - 1
+                          ],
 
-                    "Data Policies"
-                  );
+                          driveData.FileRef.split(
+                            context.pageContext.web.title
+                          )[
+                            driveData.FileRef.split(
+                              context.pageContext.web.title
+                            ).length - 1
+                          ],
 
-                  let absoluteUrl = context.pageContext.web.absoluteUrl;
+                          "Data Policies"
+                        );
 
-                  let subtUrl = driveData.FileRef.split(
-                    context.pageContext.web.title
-                  )[
-                    driveData.FileRef.split(context.pageContext.web.title)
-                      .length - 1
-                  ];
+                        let absoluteUrl = context.pageContext.web.absoluteUrl;
 
-                  let documentUrl = absoluteUrl.concat(subtUrl);
+                        let subtUrl = driveData.FileRef.split(
+                          context.pageContext.web.title
+                        )[
+                          driveData.FileRef.split(context.pageContext.web.title)
+                            .length - 1
+                        ];
 
-                  console.log(documentUrl);
+                        let documentUrl: any;
+                        switch (absoluteUrl.split("/").length) {
+                          case absoluteUrl.split('/')[absoluteUrl.split('/').length - 1] !== 'QHSE' && 6:
+                            documentUrl = `${absoluteUrl}/`.concat(
+                              subtUrl.split("/").splice(4).join("/")
+                            );
+                            break;
 
-                  return (
-                    <a
-                      href={documentUrl}
-                      className="text-decoration-none text-dark"
-                    >
-                      <div
-                        className="d-flex mb-3 mt-3 mx-3"
-                        style={{ fontSize: "16px", fontWeight: "400" }}
-                      >
-                        <div>
-                          <img src={fileIcon} width="30px" height="30px" />
-                        </div>
+                          default:
+                            documentUrl = absoluteUrl.concat(subtUrl);
+                        }
+                        console.log(documentUrl, "documentUrl");
+                        // let absoluteUrl = context.pageContext.web.absoluteUrl;
+                        // console.log(absoluteUrl, "absoluteUrl");
+                        // let subtUrl = driveData.FileRef.split(
+                        //   context.pageContext.web.title
+                        // )[
+                        //   driveData.FileRef.split(context.pageContext.web.title)
+                        //     .length - 1
+                        // ];
+                        // console.log(subtUrl, "subtUrl");
+                        // let documentUrl = `${absoluteUrl}/`.concat(
+                        //   subtUrl.split("/").splice(4).join("/")
+                        // );
+                        // console.log(documentUrl, "documentUrl");
+                        // let url:any;
+                        // switch (subtUrl) {
+                        //   case subtUrl.split("/").length <= 3:
+                        //     url = `${absoluteUrl}/`.concat(subtUrl);
+                        //   case subtUrl.split("/").length > 3:
+                        //     url = `${absoluteUrl}/`.concat(
+                        //       subtUrl.split("/").splice(4).join("/")
+                        //     );
+                        // }
+                        // console.log(url, "url Check");
+                        return (
+                          <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-interception="off"
+                            href={documentUrl}
+                            className="text-decoration-none text-dark"
+                          >
+                            <div
+                              className="d-flex mb-3 mt-3 mx-3"
+                              style={{ fontSize: "16px", fontWeight: "400" }}
+                            >
+                              <div>
+                                <img
+                                  src={fileIcon}
+                                  width="30px"
+                                  height="30px"
+                                />
+                              </div>
 
-                        <div
-                          className="d-flex align-items-center ms-3"
-                          style={{ fontSize: "18px", fontWeight: "500" }}
-                        >
-                          {
+                              <div
+                                className="d-flex align-items-center ms-3"
+                                style={{ fontSize: "18px", fontWeight: "500" }}
+                              >
+                                {
+                                  driveData.FileRef.split("/")[
+                                    driveData.FileRef.split("/").length - 1
+                                  ]
+                                }
+                              </div>
+                            </div>
+
+                            <hr />
+                          </a>
+                        );
+                      })} */}
+                  <div>
+                    {fileFilter?.length > 0 &&
+                      fileFilter
+                        ?.filter((item: any) => {
+                          return (
+                            item?.FileRef.split("/")[4]
+                              ?.toLowerCase()
+                              .match(searchText.toLowerCase()) ||
+                            item?.Created?.toLowerCase().match(
+                              searchText.toLowerCase()
+                            ) ||
+                            item?.FileRef.split("/")[5]
+                              ?.toLowerCase()
+                              .match(searchText.toLowerCase())
+                          );
+                        })
+                        ?.map((driveData: any, index: any) => {
+                          let fileIcon: any;
+
+                          switch (
+                            driveData.FileRef.split(".")[
+                              driveData.FileRef.split(".").length - 1
+                            ]
+                          ) {
+                            case "docx" || "doc":
+                              fileIcon = require("../assets/word.png");
+
+                              break;
+
+                            case "xlsx":
+                              fileIcon = require("../assets/excel.png");
+
+                              break;
+
+                            case "pptx" || "ppt":
+                              fileIcon = require("../assets/ppt.png");
+
+                              break;
+
+                            case "png":
+                              fileIcon = require("../assets/png.png");
+
+                              break;
+
+                            case "jpg" || "jpeg":
+                              fileIcon = require("../assets/jpeg.png");
+
+                              break;
+
+                            case "pdf":
+                              fileIcon = require("../assets/pdf.png");
+
+                              break;
+
+                            default:
+                              fileIcon = require("../assets/word.png");
+
+                              break;
+                          }
+
+                          console.log(
                             driveData.FileRef.split("/")[
                               driveData.FileRef.split("/").length - 1
-                            ]
-                          }
-                        </div>
-                      </div>
+                            ],
 
-                      <hr />
+                            driveData.FileRef.split(
+                              context.pageContext.web.title
+                            )[
+                              driveData.FileRef.split(
+                                context.pageContext.web.title
+                              ).length - 1
+                            ],
+
+                            "Data Policies"
+                          );
+
+                          let absoluteUrl = context.pageContext.web.absoluteUrl;
+
+                          let subtUrl = driveData.FileRef.split(
+                            context.pageContext.web.title
+                          )[
+                            driveData.FileRef.split(
+                              context.pageContext.web.title
+                            ).length - 1
+                          ];
+
+                          let documentUrl: any;
+                          switch (absoluteUrl.split("/").length) {
+                            case absoluteUrl.split("/")[
+                              absoluteUrl.split("/").length - 1
+                            ] !== "QHSE" && 6:
+                              documentUrl = `${absoluteUrl}/`.concat(
+                                subtUrl.split("/").splice(4).join("/")
+                              );
+                              break;
+
+                            default:
+                              documentUrl = absoluteUrl.concat(subtUrl);
+                          }
+                          console.log(documentUrl, "documentUrl");
+                          // let absoluteUrl = context.pageContext.web.absoluteUrl;
+                          // console.log(absoluteUrl, "absoluteUrl");
+                          // let subtUrl = driveData.FileRef.split(
+                          //   context.pageContext.web.title
+                          // )[
+                          //   driveData.FileRef.split(context.pageContext.web.title)
+                          //     .length - 1
+                          // ];
+                          // console.log(subtUrl, "subtUrl");
+                          // let documentUrl = `${absoluteUrl}/`.concat(
+                          //   subtUrl.split("/").splice(4).join("/")
+                          // );
+                          // console.log(documentUrl, "documentUrl");
+                          // let url:any;
+                          // switch (subtUrl) {
+                          //   case subtUrl.split("/").length <= 3:
+                          //     url = `${absoluteUrl}/`.concat(subtUrl);
+                          //   case subtUrl.split("/").length > 3:
+                          //     url = `${absoluteUrl}/`.concat(
+                          //       subtUrl.split("/").splice(4).join("/")
+                          //     );
+                          // }
+                          // console.log(url, "url Check");
+                          return (
+                            <a
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-interception="off"
+                              href={documentUrl}
+                              className="text-decoration-none text-dark"
+                            >
+                              <div
+                                className="d-flex mb-3 mt-3 mx-3"
+                                style={{ fontSize: "16px", fontWeight: "400" }}
+                              >
+                                <div>
+                                  <img
+                                    src={fileIcon}
+                                    width="30px"
+                                    height="30px"
+                                  />
+                                </div>
+
+                                <div
+                                  className="d-flex align-items-center ms-3"
+                                  style={{
+                                    fontSize: "18px",
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  {
+                                    driveData.FileRef.split("/")[
+                                      driveData.FileRef.split("/").length - 1
+                                    ]
+                                  }
+                                </div>
+                              </div>
+
+                              <hr />
+                            </a>
+                          );
+                        })}
+                  </div>
+                  <div
+                    className="d-flex justify-content-center mb-3"
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <a
+                      className="text-decoration-none text-dark"
+                      href={`${
+                        context.pageContext.web.absoluteUrl.split("/")
+                          .length === 5
+                          ? `${context.pageContext.web.absoluteUrl}/Shared Documents/Forms/AllItems.aspx`
+                          : `${context.pageContext.web.absoluteUrl}/Documents/Forms/AllItems.aspx`
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View All
                     </a>
-                  );
-                })
+                  </div>
+                </>
               ) : (
                 <Row className="w-100">
                   <Col xs={24} sm={24} md={24} lg={24} xl={24}>
