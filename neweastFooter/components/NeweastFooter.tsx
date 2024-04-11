@@ -23,19 +23,11 @@ export default class NeweastFooter extends React.Component<
   }
 
   public componentDidMount(): void {
-    let commentSection = document.getElementById("CommentsWrapper");
+    let commentSection: any = document.getElementById("CommentsWrapper");
     commentSection.style.display = "none";
     setInterval(() => {
-      let footer = document.getElementsByClassName("l_b_beed2cf1");
-      // console.log("footer.length", footer);
-
-      for (var i = 0; i < footer.length; i++) {
-        // console.log("====>", footer[i]);
-        const footerELE = footer[i];
-        if (footerELE instanceof HTMLElement) {
-          footerELE.style.display = "none";
-        }
-      }
+      let footer = document.getElementsByTagName("footer")[1];
+      footer.style.display = "none";
     }, 1000);
 
     const { context } = this.props;
@@ -263,26 +255,22 @@ export default class NeweastFooter extends React.Component<
                   >
                     {/* <img alt="" src={require("../assets/logo.png")} width="180px" />    */}
                     {footer?.AttachmentFiles.length > 0 ? (
-                              <img
-                                src={
-                                  context.pageContext.web.absoluteUrl
-  
-                                    .split("/")
-  
-                                    .slice(0, 3)
-  
-                                    .join("/") +
-                                  footer?.AttachmentFiles[0]
-                                    ?.ServerRelativeUrl
-                                }
-                                width={footer.Width}
-                              />
-                            ) : (
-                              <>"No Image"</>
-                            )}
-                     
-                     
-                    
+                      <img
+                        src={
+                          context.pageContext.web.absoluteUrl
+
+                            .split("/")
+
+                            .slice(0, 3)
+
+                            .join("/") +
+                          footer?.AttachmentFiles[0]?.ServerRelativeUrl
+                        }
+                        width={footer.Width}
+                      />
+                    ) : (
+                      <>"No Image"</>
+                    )}
                   </a>
                 </div>
               );
